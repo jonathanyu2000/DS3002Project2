@@ -30,59 +30,54 @@ def YahooStockAPI(stocksymbol):
     response = requests.get(url, headers=headers, params=querystring)
     return response.json()
 
-def FoodishAPI():
-    url = "https://foodish-api.herokuapp.com/"
-    response = requests.request("GET", url)
-    response.raise_for_status()
-    return response.json()
 
+
+filename = "mentionid.txt"
 def replyStock():
-    mentions = api.mentions_timeline(count = 1)
+    mentions = api.mentions_timeline(count=1)
     for mention in reversed(mentions):
-        print(str(mention.id) + ' : ' + mention.text)
-        last_seen_id = mention.id
-        if '$' in mention.text:
-            x = re.findall("(?<=\$)[A-Z]+", mention.text)
-            for stock in x:
-                try:
-                    stock_json = YahooStockAPI(stock)
-                    status = '@' + mention.user.screen_name + ' ' + (
+        mentionfile = open(filename, "a+")
+        mentionfile.seek(0, 0)
+        if (str(mention.id)+"\n") in mentionfile.readlines():
+            print("Already replied to")
+        else:
+            mentionfile.write(str(mention.id) + "\n")
+            print(str(mention.id) + ' : ' + mention.text)
+            last_seen_id = mention.id
+            if '$' in mention.text:
+                x = re.findall("(?<=\$)[A-Za-z]+", mention.text)
+                for stock in x:
+                    stock = stock.upper()
+                    try:
+                        stock_json = YahooStockAPI(stock)
+                        status = '@' + mention.user.screen_name + ' ' + (
                             stock_json['quoteResponse']['result'][0]["shortName"] + "\n"
-                                                                                    "Regular Market Day High: $" + str(
-                        stock_json['quoteResponse']['result'][0]['regularMarketDayHigh']) + "\n"
-                                                                                            "Regular Market Day Low: $" + str(
-                        stock_json['quoteResponse']['result'][0]['regularMarketDayLow']) + "\n"
-                                                                                           "Fifty Day Average: $" + str(
-                        stock_json['quoteResponse']['result'][0]['fiftyDayAverage']) + "\n"
-                                                                                       "Price: $" + str(
-                        stock_json['quoteResponse']['result'][0]["regularMarketPrice"]) + "\n"
-                                                                                          "Market Time: " + str(
-                        time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(
-                            (stock_json['quoteResponse']['result'][0]["regularMarketTime"])))) + "\n"
-                    )
-                except:
-                    status = '@' + mention.user.screen_name + " There is no valid stock ticker in your tweet...please try again with a valid stock ticker"
+                                                                                        "Regular Market Day High: $" + str(
+                            stock_json['quoteResponse']['result'][0]['regularMarketDayHigh']) + "\n"
+                                                                                                "Regular Market Day Low: $" + str(
+                            stock_json['quoteResponse']['result'][0]['regularMarketDayLow']) + "\n"
+                                                                                               "Fifty Day Average: $" + str(
+                            stock_json['quoteResponse']['result'][0]['fiftyDayAverage']) + "\n"
+                                                                                           "Price: $" + str(
+                            stock_json['quoteResponse']['result'][0]["regularMarketPrice"]) + "\n"
+                                                                                              "Market Time: " + str(
+                            time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(
+                                (stock_json['quoteResponse']['result'][0]["regularMarketTime"])))) + "\n"
+                        )
+                    except:
+                        status = '@' + mention.user.screen_name + " One or more of your stock tickers are not valid in your tweet...please try again with a valid stock ticker"
 
+                    try:
+                        api.update_status(status=status, in_reply_to_status_id=last_seen_id)
+                    except:
+                        return
+
+            else:
+                status = '@' + mention.user.screen_name + " One or more of your stock tickers are not valid in your tweet...please try again with a valid stock ticker"
                 try:
                     api.update_status(status=status, in_reply_to_status_id=last_seen_id)
                 except:
-                    print("Already Replied To")
-
-        if "food" in mention.text:
-            food_json = FoodishAPI()
-            print(food_json)
-            status = food_json["image"]
-            try:
-                api.update_status(status=status, in_reply_to_status_id=last_seen_id)
-            except:
-                print("Already Replied To")
-
-        else:
-            status = '@' + mention.user.screen_name + " There is no valid stock ticker in your tweet...please try again with a valid stock ticker"
-            try:
-                api.update_status(status=status, in_reply_to_status_id=last_seen_id)
-            except:
-                print("Already Replied To")
+                    return
 
     return
 
