@@ -30,8 +30,6 @@ def YahooStockAPI(stocksymbol):
     response = requests.get(url, headers=headers, params=querystring)
     return response.json()
 
-
-
 filename = "mentionid.txt"
 def replyStock():
     mentions = api.mentions_timeline(count=1)
@@ -44,6 +42,21 @@ def replyStock():
             mentionfile.write(str(mention.id) + "\n")
             print(str(mention.id) + ' : ' + mention.text)
             last_seen_id = mention.id
+            print(mention.text)
+            if "help" in mention.text.lower():
+                status = '@' + mention.user.screen_name + " To use this bot, please tweet at YuStockBot '$(stockticker)'.  Example '$AMZN $TSLA $GOOG'"
+                try:
+                    api.update_status(status=status, in_reply_to_status_id=last_seen_id)
+                    return
+                except:
+                    return
+            if "info" in mention.text.lower():
+                status = '@' + mention.user.screen_name + " This bot responds with stock information when given one or multiple tickers. Information includes Regular Market Day High, Regular Market Day Low, Fifty Day Average, Price, and Market Time."
+                try:
+                    api.update_status(status=status, in_reply_to_status_id=last_seen_id)
+                    return
+                except:
+                    return
             if '$' in mention.text:
                 x = re.findall("(?<=\$)[A-Za-z]+", mention.text)
                 for stock in x:
@@ -65,15 +78,14 @@ def replyStock():
                                 (stock_json['quoteResponse']['result'][0]["regularMarketTime"])))) + "\n"
                         )
                     except:
-                        status = '@' + mention.user.screen_name + " One or more of your stock tickers are not valid in your tweet...please try again with a valid stock ticker"
+                        status = '@' + mention.user.screen_name + " One or more of your stock tickers are not valid in your tweet...please try again with a valid stock ticker. For help please '@' the bot and type help. For more info please '@' the bot and type info."
 
                     try:
                         api.update_status(status=status, in_reply_to_status_id=last_seen_id)
                     except:
                         return
-
             else:
-                status = '@' + mention.user.screen_name + " One or more of your stock tickers are not valid in your tweet...please try again with a valid stock ticker"
+                status = '@' + mention.user.screen_name + " One or more of your stock tickers are not valid in your tweet...please try again with a valid stock ticker. For help please '@' the bot and type help. For more info please '@' the bot and type info."
                 try:
                     api.update_status(status=status, in_reply_to_status_id=last_seen_id)
                 except:
